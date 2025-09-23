@@ -9,5 +9,10 @@
 # Exit early if any commands fail
 set -e
 
-meson setup build
-meson compile -vC build
+wget https://github.com/mesonbuild/meson/releases/download/1.9.1/meson.pyz
+wget https://github.com/ninja-build/ninja/releases/download/v1.13.1/ninja-linux.zip
+unzip ninja-linux.zip
+export PATH="$PATH:/app/"
+
+python3 meson.pyz setup build
+python3 meson.pyz compile -vC build
