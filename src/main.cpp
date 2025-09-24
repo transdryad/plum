@@ -36,6 +36,12 @@ int main() {
         if (inputs[0] == "exit") {
             std::string arg = inputs[1];
             exit(stoi(arg));
+        } else if (inputs[0] == "echo") {
+            for (int i = 1; i < inputs.size(); i++) {
+                if (i > 1) std::cout << " ";
+                std::cout << inputs[i];
+            }
+            std::cout << std::endl;
         }
         else {
             std::cout << inputs[0] << ": command not found" << std::endl;
