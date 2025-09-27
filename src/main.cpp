@@ -36,7 +36,12 @@ std::vector<std::string> split(std::string input, char delimiter, bool shell_int
                 i += 2;
             } else if (ch == '\'' && shell_int && input[i-1] == '\'') {
                 continue;
-            } else if (ch == '\'' && shell_int) {
+            } else if (ch == '\"' && shell_int && input[i + 1] == '\"') {
+                i += 2;
+            } else if (ch == '\"' && shell_int && input[i-1] == '\"') {
+                continue;
+            } else if ((ch == '\'' || ch == '\"') && shell_int) {
+                char chh = ch;
                 bool ignore = false;
                 for (;;) {
                     ++i;
@@ -44,7 +49,10 @@ std::vector<std::string> split(std::string input, char delimiter, bool shell_int
                     if (ch == '\'') {
                         if (input[i + 1] == '\'') { ++i; continue; }
                         //else if (input[i - 1] == '\'') { ignore = true; break; }
-                        else { break; }
+                        else { if (chh == '\'') break; else token += ch;}
+                    } else if (ch == '\"') {
+                        if (input[i+1] == '\"') { ++i; continue;}
+                        else { if (chh == '\"') break; else token += ch;}
                     } else {
                         token += ch;
                     }
@@ -59,7 +67,7 @@ std::vector<std::string> split(std::string input, char delimiter, bool shell_int
             tokens.push_back(token);
         }
     }
-    for (std::string i : tokens) {}
+    //for (std::string i : tokens) {
     //std::cout << i << ' '; }
     //std::cout << std::endl;
     return tokens;
