@@ -32,6 +32,10 @@ std::vector<std::string> split(std::string input, char delimiter, bool shell_int
                     homedir = getpwuid(getuid())->pw_dir;
                 }
                 token += homedir;
+            } else if (ch == '\'' && shell_int && input[i + 1] == '\'') {
+                i += 2;
+            } else if (ch == '\'' && shell_int && input[i-1] == '\'') {
+                continue;
             } else if (ch == '\'' && shell_int) {
                 bool ignore = false;
                 for (;;) {
@@ -39,15 +43,13 @@ std::vector<std::string> split(std::string input, char delimiter, bool shell_int
                     ch = input[i];
                     if (ch == '\'') {
                         if (input[i + 1] == '\'') { ++i; continue; }
-                        //if (input[i - 1] == '\'') { ignore = true; break; }
+                        //else if (input[i - 1] == '\'') { ignore = true; break; }
                         else { break; }
                     } else {
                         token += ch;
                     }
                 }
                 if (!ignore) break;
-            } else if (ch == '\'' && shell_int && input[i + 1] == '\'') {
-                ++i; ++i;
             } else {
                 token += ch;
                 i++;
