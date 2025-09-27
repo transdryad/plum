@@ -24,6 +24,9 @@ std::vector<std::string> split(std::string input, char delimiter, bool shell_int
         for (char ch : input.substr(i)) {
             if (ch == delimiter) {
                 break;
+            } else if (ch == '\\' && shell_int) {
+                token += input[i + 1];
+                i += 2;
             } else if (ch == '~' && shell_int) {
                 std::string homedir;
                 if (getenv("HOME") != NULL) {
