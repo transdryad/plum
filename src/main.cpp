@@ -17,7 +17,7 @@ std::map<std::string, std::string> executables;
 std::vector<std::string> split(std::string input, char delimiter) {
     std::vector<std::string> tokens;
     
-    for (int i = 0; i < input.length(); i++) {
+    for (size_t i = 0; i < input.length(); i++) {
         std::string token = "";
         for (char ch : input.substr(i)) {
             if (ch == delimiter) { break; }
@@ -41,7 +41,7 @@ void exit_b(std::vector<std::string> args) {
 
 std::string combine(std::vector<std::string> strings, char delimiter) {
     std::string combined_string;
-    for (int i = 0; i < strings.size(); i++) {
+    for (size_t i = 0; i < strings.size(); i++) {
         if (i > 0) { combined_string.append(std::string(1, delimiter)); }
         combined_string.append(strings[i]);
     }
@@ -62,6 +62,10 @@ void type(std::vector<std::string> args) {
     }
 }
 
+void pwd(std::vector<std::string> args) {
+    std::cout << std::filesystem::current_path().string() << std::endl;
+}
+
 int main() {
     // Flush after every std::cout / std:cerr
     std::cout << std::unitbuf;
@@ -71,6 +75,7 @@ int main() {
     builtins["echo"] = echo;
     builtins["type"] = type;
     builtins["q"] = exit_b;
+    builtins["pwd"] = pwd;
     
     std::string pathv = std::getenv("PATH");
     std::vector<std::string> paths = split(pathv, ':');
@@ -101,7 +106,7 @@ int main() {
             pid_t pid = fork();
             if (pid == 0) { //in the child
                 std::vector<const char*> args;
-                for (int i = 0; i < inputs.size(); i++) {
+                for (size_t i = 0; i < inputs.size(); i++) {
                     args.push_back(inputs[i].c_str());
                 }
                 args.push_back(NULL);
