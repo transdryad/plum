@@ -61,7 +61,7 @@ std::vector<std::string> split(std::string input, char delimiter, bool shell_int
     }
     for (std::string i : tokens) {}
     //std::cout << i << ' '; }
-    std::cout << std::endl;
+    //std::cout << std::endl;
     return tokens;
 }
 
