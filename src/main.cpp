@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <unistd.h>
+#include <sys/wait.h>
 
 using builtin = std::function<void(std::vector<std::string>)>;
 
@@ -38,12 +39,17 @@ void exit_b(std::vector<std::string> args) {
     exit(stoi(arg));
 }
 
+std::string combine(std::vector<std::string> strings, char delimiter) {
+    std::string combined_string;
+    for (int i = 0; i < strings.size(); i++) {
+        if (i > 0) { combined_string.append(std::string(1, delimiter)); }
+        combined_string.append(strings[i]);
+    }
+    return combined_string;
+}
+
 void echo(std::vector<std::string> args) {
-    for (int i = 0; i < args.size(); i++) {
-        if (i > 0) std::cout << " ";
-            std::cout << args[i];
-        }
-        std::cout << std::endl;
+    std::cout << combine(args, ' ') << std::endl;
 }
 
 void type(std::vector<std::string> args) {
@@ -90,6 +96,25 @@ int main() {
         if (builtins[inputs[0]]) {
             std::vector<std::string> args(inputs.begin() + 1, inputs.end());
             builtins[inputs[0]](args);
+        }  else if (executables.contains(inputs[0])) {
+            //system(combine(inputs));
+            pid_t pid = fork();
+            if (pid == 0) { //in the child
+                std::vector<const char*> args;
+                for (int i = 0; i < inputs.size(); i++) {
+                    args.push_back(inputs[i].c_str());
+                }
+                args.push_back(NULL);
+                execvp(args[0], const_cast<char* const*>(args.data()));
+            }
+            else if(pid > 0) {// in the parent
+                int status;
+                waitpid(pid, &status, 0);
+            }
+            else {
+                printf("Fork failed!\n");
+                return 1;
+            }    
         } else {
             std::cout << inputs[0] << ": command not found" << std::endl;
         }
