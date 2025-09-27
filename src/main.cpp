@@ -66,6 +66,14 @@ void pwd(std::vector<std::string> args) {
     std::cout << std::filesystem::current_path().string() << std::endl;
 }
 
+void cd(std::vector<std::string> args) {
+    if (std::filesystem::exists(std::filesystem::path(args[0]))) {
+        std::filesystem::current_path(std::filesystem::path(args[0]));
+    } else {
+        std::cout << "cd: " << args[0] << ": No such file or directory" << std::endl;
+    }
+}
+
 int main() {
     // Flush after every std::cout / std:cerr
     std::cout << std::unitbuf;
@@ -76,6 +84,7 @@ int main() {
     builtins["type"] = type;
     builtins["q"] = exit_b;
     builtins["pwd"] = pwd;
+    builtins["cd"] = cd;
     
     std::string pathv = std::getenv("PATH");
     std::vector<std::string> paths = split(pathv, ':');
