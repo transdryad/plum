@@ -8,19 +8,30 @@
 #include <filesystem>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 using builtin = std::function<void(std::vector<std::string>)>;
 
 std::map<std::string, builtin> builtins;
 std::map<std::string, std::string> executables;
 
-std::vector<std::string> split(std::string input, char delimiter) {
+std::vector<std::string> split(std::string input, char delimiter, bool shell_int) {
     std::vector<std::string> tokens;
     
     for (size_t i = 0; i < input.length(); i++) {
         std::string token = "";
         for (char ch : input.substr(i)) {
             if (ch == delimiter) { break; }
+            else if (ch == '~' && shell_int) {
+                std::string homedir;
+                if (getenv("HOME") != NULL) {
+                    homedir = getenv("HOME");
+                } else {
+                    homedir = getpwuid(getuid())->pw_dir;
+                }
+                token += homedir;
+            }
             else {
                 token += ch;
                 i++;
@@ -87,7 +98,7 @@ int main() {
     builtins["cd"] = cd;
     
     std::string pathv = std::getenv("PATH");
-    std::vector<std::string> paths = split(pathv, ':');
+    std::vector<std::string> paths = split(pathv, ':', false);
     for (std::string path : paths) {
         if (std::filesystem::exists(std::filesystem::path(path))) {
             for (const std::filesystem::directory_entry& de : std::filesystem::recursive_directory_iterator(path)){
@@ -105,7 +116,7 @@ int main() {
         std::string input;
         std::getline(std::cin, input);
         
-        std::vector<std::string> inputs = split(input, ' ');
+        std::vector<std::string> inputs = split(input, ' ', true);
         if (inputs.empty()) continue;
         if (builtins[inputs[0]]) {
             std::vector<std::string> args(inputs.begin() + 1, inputs.end());
