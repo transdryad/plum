@@ -22,8 +22,9 @@ std::vector<std::string> split(std::string input, char delimiter, bool shell_int
     for (size_t i = 0; i < input.length(); i++) {
         std::string token = "";
         for (char ch : input.substr(i)) {
-            if (ch == delimiter) { break; }
-            else if (ch == '~' && shell_int) {
+            if (ch == delimiter) {
+                break;
+            } else if (ch == '~' && shell_int) {
                 std::string homedir;
                 if (getenv("HOME") != NULL) {
                     homedir = getenv("HOME");
@@ -31,14 +32,34 @@ std::vector<std::string> split(std::string input, char delimiter, bool shell_int
                     homedir = getpwuid(getuid())->pw_dir;
                 }
                 token += homedir;
-            }
-            else {
+            } else if (ch == '\'' && shell_int) {
+                bool ignore = false;
+                for (;;) {
+                    ++i;
+                    ch = input[i];
+                    if (ch == '\'') {
+                        if (input[i + 1] == '\'') { ++i; continue; }
+                        //if (input[i - 1] == '\'') { ignore = true; break; }
+                        else { break; }
+                    } else {
+                        token += ch;
+                    }
+                }
+                if (!ignore) break;
+            } else if (ch == '\'' && shell_int && input[i + 1] == '\'') {
+                ++i; ++i;
+            } else {
                 token += ch;
                 i++;
             }
         }
-        tokens.push_back(token);
+        if (token != "") {
+            tokens.push_back(token);
+        }
     }
+    for (std::string i : tokens) {
+    std::cout << i << ' '; }
+    std::cout << std::endl;
     return tokens;
 }
 
@@ -53,7 +74,7 @@ void exit_b(std::vector<std::string> args) {
 std::string combine(std::vector<std::string> strings, char delimiter) {
     std::string combined_string;
     for (size_t i = 0; i < strings.size(); i++) {
-        if (i > 0) { combined_string.append(std::string(1, delimiter)); }
+        if (i > 0 && strings[i] != "") { combined_string.append(std::string(1, delimiter)); }
         combined_string.append(strings[i]);
     }
     return combined_string;
