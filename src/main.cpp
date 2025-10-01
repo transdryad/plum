@@ -18,66 +18,53 @@ std::map<std::string, std::string> executables;
 
 std::vector<std::string> split(std::string input, char delimiter, bool shell_int) {
     std::vector<std::string> tokens;
-    
-    for (size_t i = 0; i < input.length(); i++) {
-        std::string token = "";
-        for (char ch : input.substr(i)) {
-            if (ch == delimiter) {
-                break;
-            } else if (ch == '\\' && shell_int) {
-                token += input[i + 1];
-                i += 2;
-            } else if (ch == '~' && shell_int) {
-                std::string homedir;
-                if (getenv("HOME") != NULL) {
-                    homedir = getenv("HOME");
-                } else {
-                    homedir = getpwuid(getuid())->pw_dir;
-                }
-                token += homedir;
-            } else if (ch == '\'' && shell_int && input[i + 1] == '\'') {
-                i += 2;
-            } else if (ch == '\'' && shell_int && input[i-1] == '\'') {
-                continue;
-            } else if (ch == '\"' && shell_int && input[i + 1] == '\"') {
-                i += 2;
-            } else if (ch == '\"' && shell_int && input[i-1] == '\"') {
-                continue;
-            } else if ((ch == '\'' || ch == '\"') && shell_int) {
-                char chh = ch;
-                bool ignore = false;
-                for (;;) {
+    std::string token;
+    bool single_quote = false, double_quote = false;
+
+    for (size_t i = 0; i < input.size(); i++) {
+        char ch = input[i];
+
+        if (shell_int && ch == '\\' && i + 1 < input.size() && !single_quote) { //escape with backslashes
+            if (double_quote) {
+                if (input[i + 1] == '\\' || input[i + 1] == '\"' || input[i + 1] == '$' || input[i + 1] == '`' || input[i + 1] == '\n') {
+                    token += input[i + 1];
                     ++i;
-                    ch = input[i];
-                    if (ch == '\'') {
-                        if (input[i + 1] == '\'') { ++i; continue; }
-                        //else if (input[i - 1] == '\'') { ignore = true; break; }
-                        else { if (chh == '\'') break; else token += ch;}
-                    } else if (ch == '\"') {
-                        if (input[i+1] == '\"') { ++i; continue;}
-                        else { if (chh == '\"') break; else token += ch;}
-                    } else {
-                        token += ch;
-                    }
+                } else {
+                    token += ch;
                 }
-                if (!ignore) break;
             } else {
-                token += ch;
-                i++;
+                token += input[i + 1];
+                ++i;
             }
-        }
-        if (token != "") {
-            tokens.push_back(token);
+        } else if (shell_int && ch == '\'' && !double_quote) { //flip single quotes if not in double quote, vice versa
+            single_quote = !single_quote;
+        } else if (shell_int && ch == '"' && !single_quote) {
+            double_quote = !double_quote;
+        } else if (!single_quote && !double_quote && ch == delimiter) {
+            if (!token.empty()) {
+                tokens.push_back(token);
+                token.clear();
+            }
+        } else if (shell_int && ch == '~' && !single_quote) {
+            std::string homedir;
+            if (getenv("HOME") != nullptr) {
+                homedir = getenv("HOME");
+            } else {
+                homedir = getpwuid(getuid())->pw_dir;
+            }
+            token += homedir;
+        } else {
+            token += ch;
         }
     }
-    //for (std::string i : tokens) {
-    //std::cout << i << ' '; }
-    //std::cout << std::endl;
+    if (!token.empty()) {
+        tokens.push_back(token);
+    }
     return tokens;
 }
 
 void exit_b(std::vector<std::string> args) {
-    if (args.size() == 0) {
+    if (args.empty()) {
         exit(0);
     }
     std::string arg = args[0];
@@ -87,7 +74,7 @@ void exit_b(std::vector<std::string> args) {
 std::string combine(std::vector<std::string> strings, char delimiter) {
     std::string combined_string;
     for (size_t i = 0; i < strings.size(); i++) {
-        if (i > 0 && strings[i] != "") { combined_string.append(std::string(1, delimiter)); }
+        if (i > 0 && !strings[i].empty()) { combined_string.append(std::string(1, delimiter)); }
         combined_string.append(strings[i]);
     }
     return combined_string;
@@ -123,14 +110,14 @@ int main() {
     // Flush after every std::cout / std:cerr
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
-    
+
     builtins["exit"] = exit_b;
     builtins["echo"] = echo;
     builtins["type"] = type;
     builtins["q"] = exit_b;
     builtins["pwd"] = pwd;
     builtins["cd"] = cd;
-    
+
     std::string pathv = std::getenv("PATH");
     std::vector<std::string> paths = split(pathv, ':', false);
     for (std::string path : paths) {
@@ -149,7 +136,7 @@ int main() {
 
         std::string input;
         std::getline(std::cin, input);
-        
+
         std::vector<std::string> inputs = split(input, ' ', true);
         if (inputs.empty()) continue;
         if (builtins[inputs[0]]) {
@@ -160,10 +147,10 @@ int main() {
             pid_t pid = fork();
             if (pid == 0) { //in the child
                 std::vector<const char*> args;
-                for (size_t i = 0; i < inputs.size(); i++) {
-                    args.push_back(inputs[i].c_str());
+                for (const auto & inputa : inputs) {
+                    args.push_back(inputa.c_str());
                 }
-                args.push_back(NULL);
+                args.push_back(nullptr);
                 execvp(args[0], const_cast<char* const*>(args.data()));
             }
             else if(pid > 0) {// in the parent
